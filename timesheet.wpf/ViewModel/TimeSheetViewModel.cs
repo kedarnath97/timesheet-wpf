@@ -230,13 +230,20 @@ namespace timesheet.wpf.ViewModel
             {
                 TimeSheetDataList = new ObservableCollection<TimeSheetTransposed>();
             }
-            Tuple<DateTime, DateTime> weekDates = DateExtensions.GetWeekDates(ForDay);
-            _beginDay = weekDates.Item1;
-            var userTaskData = await _timeSheetEntryService.GetTimeSheetDataForPeriod(SelectedEmployee.Code, weekDates.Item1.ToString("yyyyMMdd"), weekDates.Item2.ToString("yyyyMMdd"));
-            mTimeSheetRawList = userTaskData;
-            if (mTimeSheetRawList != null && mTimeSheetRawList.Any())
-                TransposeToWeeklyFormat();
-            CalculateTotalRecordData();
+            try
+            {
+                Tuple<DateTime, DateTime> weekDates = DateExtensions.GetWeekDates(ForDay);
+                _beginDay = weekDates.Item1;
+                var userTaskData = await _timeSheetEntryService.GetTimeSheetDataForPeriod(SelectedEmployee.Code, weekDates.Item1.ToString("yyyyMMdd"), weekDates.Item2.ToString("yyyyMMdd"));
+                mTimeSheetRawList = userTaskData;
+                if (mTimeSheetRawList != null && mTimeSheetRawList.Any())
+                    TransposeToWeeklyFormat();
+                CalculateTotalRecordData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void TransposeToWeeklyFormat()
@@ -296,13 +303,13 @@ namespace timesheet.wpf.ViewModel
                 new TimeSheetTransposed
                 {
                     Task=new TaskModel{ Name="Total",Id=0},
-                    Monday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Monday):0,
-                    Tuesday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Tuesday):0,
-                    Wednesday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Wednesday):0,
-                    Thursday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Thursday):0,
-                    Friday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Friday):0,
-                    Saturday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Saturday):0,
-                    Sunday=TimeSheetDataList==null || TimeSheetDataList.Any()? TimeSheetDataList.Sum(e=>e.Sunday):0,
+                    Monday=TimeSheetDataList==null || !TimeSheetDataList.Any()?0: TimeSheetDataList.Sum(e=>e.Monday),
+                    Tuesday=TimeSheetDataList==null || !TimeSheetDataList.Any()?0: TimeSheetDataList.Sum(e=>e.Tuesday),
+                    Wednesday=TimeSheetDataList==null || !TimeSheetDataList.Any()?0: TimeSheetDataList.Sum(e=>e.Wednesday),
+                    Thursday=TimeSheetDataList==null || !TimeSheetDataList.Any()?0: TimeSheetDataList.Sum(e=>e.Thursday),
+                    Friday=TimeSheetDataList==null || !TimeSheetDataList.Any()? 0:TimeSheetDataList.Sum(e=>e.Friday),
+                    Saturday=TimeSheetDataList==null || !TimeSheetDataList.Any()? 0:TimeSheetDataList.Sum(e=>e.Saturday),
+                    Sunday=TimeSheetDataList==null || !TimeSheetDataList.Any()? 0:TimeSheetDataList.Sum(e=>e.Sunday),
                 }
             };
         }
