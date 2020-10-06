@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using timesheet.core.Base;
 using timesheet.core.Singleton;
@@ -42,28 +43,35 @@ namespace timesheet.wpf.ViewModel
 
         private async Task Load()
         {
-            var employeeList = await this._employeeService.GetEmployees();
-            var effortList = await this._timeSheetService.GetAllTimeSheetData();
-            var weekBegin = DateTimeHelpers.DateExtensions.GetStartOfWeek(DateTime.Today, DayOfWeek.Sunday);
-            var thisWeekEfforts = effortList.Where(a => a.RecordDate >= weekBegin && a.RecordDate <= DateTime.Today);
-            foreach (var employee in employeeList)
+            try
             {
-                try
+                var employeeList = await this._employeeService.GetEmployees();
+                var effortList = await this._timeSheetService.GetAllTimeSheetData();
+                var weekBegin = DateTimeHelpers.DateExtensions.GetStartOfWeek(DateTime.Today, DayOfWeek.Sunday);
+                var thisWeekEfforts = effortList.Where(a => a.RecordDate >= weekBegin && a.RecordDate <= DateTime.Today);
+                foreach (var employee in employeeList)
                 {
-                    var thisWeekEffort = thisWeekEfforts.Where(a => a.EmployeeCode == employee.Code).Sum(p => p.TaskHours);
-                    var avgTotalEffort = effortList.Where(a => a.EmployeeCode == employee.Code).Average(p => p.TaskHours);
-                    if (double.IsInfinity(avgTotalEffort) || double.IsNaN(avgTotalEffort))
-                        avgTotalEffort = 0;
-                    employee.WeeklyTotalEffort = thisWeekEffort;
-                    employee.AverageEffort = avgTotalEffort;
+                    try
+                    {
+                        var thisWeekEffort = thisWeekEfforts.Where(a => a.EmployeeCode == employee.Code).Sum(p => p.TaskHours);
+                        var avgTotalEffort = effortList.Where(a => a.EmployeeCode == employee.Code).Average(p => p.TaskHours);
+                        if (double.IsInfinity(avgTotalEffort) || double.IsNaN(avgTotalEffort))
+                            avgTotalEffort = 0;
+                        employee.WeeklyTotalEffort = thisWeekEffort;
+                        employee.AverageEffort = avgTotalEffort;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                 }
-                catch
-                {
-                    continue;
-                }
-            }
 
-            Employees = new ObservableCollection<Employee>(employeeList);
+                Employees = new ObservableCollection<Employee>(employeeList);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private MainViewModel mParentViewModel;
